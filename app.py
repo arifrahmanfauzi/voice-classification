@@ -1,4 +1,4 @@
-from flask import Flask,request, jsonify, Response 
+from flask import Flask,request, jsonify, Response, render_template 
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS, cross_origin
 
@@ -29,7 +29,8 @@ CORS(app)
 
 @app.route('/')
 def index():
-    return "<h1>Voice Command</h1>"
+    # return "<h1>Voice Command</h1>"
+    return render_template("index.php")
 
 def getFeature():
     return "feature"
@@ -53,15 +54,19 @@ def classify(inputFile, model_type, model_name):
 @cross_origin()
 def predict():
     if request.method == 'POST':
+        
         f = request.files['file']
+        print("file receve %s"%f)
         filepath = './audio/'+secure_filename(f.filename)
+        
         f.save(filepath)
-        model_path = os.getcwd()+'/svm5classmodel'
+        model_path = os.getcwd()+'/model/svm5classmodel'
         # model = open(model_path)
         print("model path => %s"%model_path)
+        
         winner = classify(filepath, "svm_rbf", model_path)
         
-    return jsonify({'predicted class': winner})
+    return jsonify({'predicted_class': winner})
 
 @app.route('/uploadaudio', methods=['POST'])
 @cross_origin()
@@ -74,13 +79,14 @@ def getFileAudio():
         
         f.save(filepath)
         X, sample_rate = sf.read(filepath, dtype='float32')
-        result = classify(filepath, "svm_rbf", "svm5classmodel")
+        # result = classify(filepath, "svm_rbf", "svm5classmodel")
         print('done')
         # mfccs,chroma,mel,contrast,tonnetz = extract_feature(f)
         
-    return jsonify({'result': result})
+    return jsonify({'result': sample_rate})
 
 app.add_url_rule('/feature','feature',getFeature)
 
 if __name__ == '__main__':
+    # context = ('../../Music/localhost.crt', '../../Music/localhost.key')
     app.run(host='127.0.0.1', port="5000", debug=True)
